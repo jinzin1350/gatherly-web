@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api-client';
 import type { EventData, PromptAnalysis } from '@/lib/types';
@@ -23,7 +23,7 @@ type Stage = 'analyzing' | 'wizard' | 'generating' | 'error';
 
 // ─── Main page ───────────────────────────────────────────────────────────────
 
-export default function CreatePage() {
+function CreateFlow() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const prompt       = searchParams.get('prompt') ?? '';
@@ -136,5 +136,19 @@ export default function CreatePage() {
       )}
 
     </div>
+  );
+}
+
+// ─── Default export — Suspense wrapper required by Next.js for useSearchParams ─
+
+export default function CreatePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-[#FDFBF7]">
+        <Spinner label="Loading…" />
+      </div>
+    }>
+      <CreateFlow />
+    </Suspense>
   );
 }
