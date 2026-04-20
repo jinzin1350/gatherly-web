@@ -6,7 +6,8 @@ export interface TextAIProvider {
     prompt: string,
     date: string,
     time: string,
-    location: string
+    location: string,
+    smartAnswers?: Record<string, string>
   ): Promise<Omit<EventData, 'images' | 'eventId' | 'shortToken' | 'hostId' | 'plan' | 'createdAt'>>;
 }
 

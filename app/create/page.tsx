@@ -59,7 +59,8 @@ function CreateFlow() {
           prompt,
           res.data.extractedData.date,
           res.data.extractedData.time,
-          res.data.extractedData.location
+          res.data.extractedData.location,
+          {} // no wizard shown — no smart answers collected
         );
       }
     });
@@ -67,7 +68,13 @@ function CreateFlow() {
   }, [prompt]);
 
   // ── Step 2: Generate ─────────────────────────────────────────────────────
-  function startGenerating(p: string, date: string, time: string, location: string) {
+  function startGenerating(
+    p: string,
+    date: string,
+    time: string,
+    location: string,
+    smartAnswers: Record<string, string> = {}
+  ) {
     setStage('generating');
     setMsgIdx(0);
 
@@ -77,7 +84,7 @@ function CreateFlow() {
       setTimeout(() => setMsgIdx(i + 1), m.after)
     );
 
-    api.createEvent({ prompt: p, date, time, location }).then(res => {
+    api.createEvent({ prompt: p, date, time, location, smartAnswers }).then(res => {
       timerRefs.current.forEach(clearTimeout);
 
       if (!res.ok) {
@@ -115,8 +122,8 @@ function CreateFlow() {
         <WizardForm
           analysis={analysis}
           prompt={prompt}
-          onSubmit={(date, time, location) =>
-            startGenerating(prompt, date, time, location)
+          onSubmit={(date, time, location, smartAnswers) =>
+            startGenerating(prompt, date, time, location, smartAnswers)
           }
         />
       )}

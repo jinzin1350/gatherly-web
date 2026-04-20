@@ -69,4 +69,5 @@ export const FIXTURE_ANALYSIS: PromptAnalysis = {
     time: '3:00 PM – 6:00 PM',
     location: 'The Royal Gardens, 456 Emerald Ave',
   },
+  smartQuestions: [],
 };

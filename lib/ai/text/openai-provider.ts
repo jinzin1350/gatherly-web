@@ -10,7 +10,8 @@ export class OpenAITextProvider implements TextAIProvider {
     _prompt: string,
     _date: string,
     _time: string,
-    _location: string
+    _location: string,
+    _smartAnswers?: Record<string, string>
   ): Promise<Omit<EventData, 'images' | 'eventId' | 'shortToken' | 'hostId' | 'plan' | 'createdAt'>> {
     throw new Error('OpenAI provider not yet implemented');
   }

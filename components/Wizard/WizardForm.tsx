@@ -8,20 +8,30 @@ import Button from '@/components/ui/Button';
 interface Props {
   analysis: PromptAnalysis;
   prompt: string;
-  onSubmit: (date: string, time: string, location: string) => void;
+  onSubmit: (
+    date: string,
+    time: string,
+    location: string,
+    smartAnswers: Record<string, string>
+  ) => void;
 }
 
 export default function WizardForm({ analysis, prompt, onSubmit }: Props) {
   const [date, setDate]         = useState(analysis.extractedData.date);
   const [time, setTime]         = useState(analysis.extractedData.time);
   const [location, setLocation] = useState(analysis.extractedData.location);
+  const [smartAnswers, setSmartAnswers] = useState<Record<string, string>>(
+    Object.fromEntries(analysis.smartQuestions.map(q => [q.id, '']))
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(date.trim(), time.trim(), location.trim());
+    onSubmit(date.trim(), time.trim(), location.trim(), smartAnswers);
   };
 
   const missing = analysis.missingFields;
+  const hasSmartQuestions = analysis.smartQuestions.length > 0;
+  const hasMissingFields  = missing.date || missing.time || missing.location;
 
   return (
     <div className="glass-panel rounded-3xl p-8 md:p-12 w-full max-w-lg shadow-xl">
@@ -37,6 +47,8 @@ export default function WizardForm({ analysis, prompt, onSubmit }: Props) {
       </p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+
+        {/* ── Required: missing date / time / location ── */}
         {missing.date && (
           <label className="flex flex-col gap-1.5">
             <span className="text-xs font-medium text-gray-500 uppercase tracking-widest">Date</span>
@@ -76,6 +88,35 @@ export default function WizardForm({ analysis, prompt, onSubmit }: Props) {
             />
           </label>
         )}
+
+        {/* ── Optional: smart follow-up questions ── */}
+        {hasSmartQuestions && (
+          <>
+            {hasMissingFields && (
+              <hr className="border-gray-100 my-1" />
+            )}
+            <p className="text-xs text-gray-400 font-sans tracking-wide">
+              Optional — helps us create a more personalized page
+            </p>
+            {analysis.smartQuestions.map(q => (
+              <label key={q.id} className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-gray-500 uppercase tracking-widest">
+                  {q.question}
+                </span>
+                <input
+                  type="text"
+                  placeholder={q.placeholder}
+                  value={smartAnswers[q.id] ?? ''}
+                  onChange={e =>
+                    setSmartAnswers(prev => ({ ...prev, [q.id]: e.target.value }))
+                  }
+                  className="border border-gray-200 rounded-xl px-4 py-3 text-sm font-sans outline-none focus:border-[#5A5A40] focus:ring-1 focus:ring-[#5A5A40] transition-all"
+                />
+              </label>
+            ))}
+          </>
+        )}
+
         <Button type="submit" className="mt-2 w-full">
           Create my event →
         </Button>

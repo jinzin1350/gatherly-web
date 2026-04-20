@@ -42,6 +42,7 @@ export const api = {
     date: string;
     time: string;
     location: string;
+    smartAnswers?: Record<string, string>;
   }) =>
     request<EventData>('/events/create', {
       method: 'POST',

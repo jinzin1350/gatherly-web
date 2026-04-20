@@ -32,7 +32,7 @@ function sanitizeUiStyle(raw: string): typeof VALID_UI_STYLES[number] {
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, date, time, location } = await req.json()
+    const { prompt, date, time, location, smartAnswers } = await req.json()
 
     if (!prompt || !date || !time || !location) {
       return NextResponse.json<ApiResponse<never>>(
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     // ── Step 1: Generate text + images concurrently ──────────────────────
     const [details, heroB64, detailsB64, rsvpB64, ...timelineB64s] = await Promise.all([
-      textProvider.generateEventDetails(prompt, date, time, location),
+      textProvider.generateEventDetails(prompt, date, time, location, smartAnswers),
       imageProvider.generateImage(`${prompt} — hero banner, wide cinematic`, '16:9'),
       imageProvider.generateImage(`${prompt} — venue details, atmospheric`, '4:3'),
       imageProvider.generateImage(`${prompt} — RSVP invitation, elegant`, '3:4'),

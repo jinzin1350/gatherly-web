@@ -51,10 +51,18 @@ export type Guest = {
   rsvpAt: string;
 };
 
+export type SmartQuestion = {
+  id:          string; // snake_case key, e.g. 'guest_of_honor_name'
+  question:    string; // display text, e.g. "What's the guest of honor's name?"
+  placeholder: string; // input hint, e.g. "e.g. Shirin"
+  type:        'text';
+};
+
 export type PromptAnalysis = {
-  needsMoreInfo: boolean;
-  missingFields: { date: boolean; time: boolean; location: boolean };
-  extractedData: { date: string; time: string; location: string };
+  needsMoreInfo:  boolean;
+  missingFields:  { date: boolean; time: boolean; location: boolean };
+  extractedData:  { date: string; time: string; location: string };
+  smartQuestions: SmartQuestion[]; // 0-3 optional personalization questions
 };
 
 export type ApiResponse<T> =
