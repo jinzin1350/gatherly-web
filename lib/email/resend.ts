@@ -4,7 +4,7 @@ import type { ReactElement } from 'react'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-const FROM = 'Gatherly <noreply@gatherly.app>'
+const FROM = 'Gatherly <onboarding@resend.dev>'
 
 export async function sendEmail({
   to,
