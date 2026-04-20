@@ -87,7 +87,13 @@ export default function CreatePage() {
       }
 
       const event = res.data as EventData;
-      sessionStorage.setItem(event.eventId, JSON.stringify(event));
+      try {
+        sessionStorage.setItem(event.eventId, JSON.stringify(event));
+      } catch (err) {
+        // QuotaExceededError — base64 images too large for sessionStorage.
+        // Day 3 Supabase persistence will make this irrelevant.
+        console.warn('[create] sessionStorage write failed:', err);
+      }
       router.replace(`/e/${event.eventId}?fresh=1`);
     });
   }
