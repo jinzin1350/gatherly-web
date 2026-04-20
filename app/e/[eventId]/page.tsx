@@ -15,7 +15,7 @@ export default function EventPage() {
   useEffect(() => {
     // Try sessionStorage first (set by /create after AI generation)
     try {
-      const stored = sessionStorage.getItem(`event:${eventId}`);
+      const stored = sessionStorage.getItem(eventId);
       if (stored) {
         setData(JSON.parse(stored));
         return;

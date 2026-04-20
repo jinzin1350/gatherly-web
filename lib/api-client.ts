@@ -43,13 +43,10 @@ export const api = {
     time: string;
     location: string;
   }) =>
-    request<{ eventId: string; shortToken: string; event: EventData }>(
-      '/events/create',
-      {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      }
-    ),
+    request<EventData>('/events/create', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 
   getEvent: (eventId: string) =>
     request<EventData>(`/events/${eventId}`),
