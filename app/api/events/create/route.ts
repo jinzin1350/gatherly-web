@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 import { ulid } from 'ulid'
 import { nanoid } from 'nanoid'
 import { getAIConfig } from '@/lib/ai/config'
 import { getTextProvider, getImageProvider } from '@/lib/ai/registry'
+import { uploadBase64Image } from '@/lib/storage/supabase-storage'
 import { FIXTURE_EVENT } from '@/lib/fixture'
 import type { ApiResponse, EventData } from '@/lib/types'
+
+const getAdminClient = () =>
+  createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,7 +25,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Mock mode — skip AI, return fixture
+    // Mock mode — skip AI + storage, return fixture
     if (process.env.AI_MOCK === 'true') {
       const event: EventData = {
         ...FIXTURE_EVENT,
@@ -29,11 +37,11 @@ export async function POST(req: NextRequest) {
     }
 
     const config = await getAIConfig()
-    const textProvider = getTextProvider(config.textProvider)
+    const textProvider  = getTextProvider(config.textProvider)
     const imageProvider = getImageProvider(config.imageProvider)
 
-    // Generate text details + all images concurrently
-    const [details, heroImg, detailsImg, rsvpImg, ...timelineImgs] = await Promise.all([
+    // ── Step 1: Generate text + images concurrently ──────────────────────
+    const [details, heroB64, detailsB64, rsvpB64, ...timelineB64s] = await Promise.all([
       textProvider.generateEventDetails(prompt, date, time, location),
       imageProvider.generateImage(`${prompt} — hero banner, wide cinematic`, '16:9'),
       imageProvider.generateImage(`${prompt} — venue details, atmospheric`, '4:3'),
@@ -43,19 +51,63 @@ export async function POST(req: NextRequest) {
       imageProvider.generateImage(`${prompt} — event moment 3`, '1:1'),
     ])
 
+    const eventId    = ulid()
+    const shortToken = nanoid(10)
+
+    // ── Step 2: Upload images to Supabase Storage concurrently ───────────
+    const [heroUrl, detailsUrl, rsvpUrl, tl0Url, tl1Url, tl2Url] = await Promise.all([
+      uploadBase64Image(eventId, 'hero',       heroB64),
+      uploadBase64Image(eventId, 'details',    detailsB64),
+      uploadBase64Image(eventId, 'rsvp',       rsvpB64),
+      uploadBase64Image(eventId, 'timeline-0', timelineB64s[0]),
+      uploadBase64Image(eventId, 'timeline-1', timelineB64s[1]),
+      uploadBase64Image(eventId, 'timeline-2', timelineB64s[2]),
+    ])
+
+    // ── Step 3: Assemble EventData with CDN URLs ─────────────────────────
     const event: EventData = {
       ...details,
-      eventId: ulid(),
-      shortToken: nanoid(10),
+      eventId,
+      shortToken,
       hostId: 'anon',
       plan: 'free',
       createdAt: new Date().toISOString(),
       images: {
-        hero: heroImg,
-        details: detailsImg,
-        rsvp: rsvpImg,
-        timeline: [timelineImgs[0], timelineImgs[1], timelineImgs[2]],
+        hero:     heroUrl,
+        details:  detailsUrl,
+        rsvp:     rsvpUrl,
+        timeline: [tl0Url, tl1Url, tl2Url],
       },
+    }
+
+    // ── Step 4: Insert event row into Supabase ───────────────────────────
+    const { error: dbError } = await getAdminClient()
+      .from('events')
+      .insert({
+        id:              event.eventId,
+        short_token:     event.shortToken,
+        host_id:         null,           // anon until auth is wired (Day 3+)
+        prompt,
+        title:           event.title,
+        description:     event.description,
+        theme_name:      event.themeName,
+        theme_colors:    event.themeColors,
+        ui_style:        event.uiStyle,
+        is_rtl:          event.isRTL,
+        date:            event.date,
+        time:            event.time,
+        location:        event.location,
+        schedule:        event.schedule,
+        vibe:            event.vibe,
+        welcome_message: event.welcomeMessage,
+        images:          event.images,
+        plan:            event.plan,
+      })
+
+    if (dbError) {
+      console.error('[create] DB insert failed:', dbError)
+      // Still return the event — client gets the data even if DB write failed.
+      // The event page will fall back to sessionStorage in this case.
     }
 
     return NextResponse.json<ApiResponse<EventData>>({ ok: true, data: event })
