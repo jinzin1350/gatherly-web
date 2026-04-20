@@ -14,6 +14,22 @@ const getAdminClient = () =>
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+// Gemini sometimes returns values outside the DB check constraint.
+// Normalize to the nearest valid ui_style before inserting.
+const VALID_UI_STYLES = ['elegant', 'playful', 'minimal', 'bold', 'romantic'] as const
+
+function sanitizeUiStyle(raw: string): typeof VALID_UI_STYLES[number] {
+  const normalized = raw.toLowerCase().trim()
+  if ((VALID_UI_STYLES as readonly string[]).includes(normalized)) {
+    return normalized as typeof VALID_UI_STYLES[number]
+  }
+  if (normalized.includes('play') || normalized.includes('fun') || normalized.includes('pixel')) return 'playful'
+  if (normalized.includes('roman') || normalized.includes('love'))   return 'romantic'
+  if (normalized.includes('bold')  || normalized.includes('strong')) return 'bold'
+  if (normalized.includes('minimal') || normalized.includes('clean')) return 'minimal'
+  return 'elegant' // safe default
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { prompt, date, time, location } = await req.json()
@@ -92,7 +108,7 @@ export async function POST(req: NextRequest) {
         description:     event.description,
         theme_name:      event.themeName,
         theme_colors:    event.themeColors,
-        ui_style:        event.uiStyle,
+        ui_style:        sanitizeUiStyle(event.uiStyle),
         is_rtl:          event.isRTL,
         date:            event.date,
         time:            event.time,
