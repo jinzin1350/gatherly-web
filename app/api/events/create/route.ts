@@ -157,7 +157,19 @@ export async function POST(req: NextRequest) {
       // The event page will fall back to sessionStorage in this case.
     }
 
-    return NextResponse.json<ApiResponse<EventData>>({ ok: true, data: event })
+    // ── Set pending claim cookie for anonymous creators ───────────────────
+    // Primary claim path is URL-based (magic link carries /claim/[id]).
+    // Cookie is a secondary fallback for same-browser dashboard visits.
+    const response = NextResponse.json<ApiResponse<EventData>>({ ok: true, data: event })
+    if (!hostId) {
+      response.cookies.set('gatherly_pending_claim', event.eventId, {
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        path:   '/',
+        sameSite: 'lax',
+        httpOnly: false, // readable client-side for dashboard banner
+      })
+    }
+    return response
   } catch (err) {
     console.error('[create]', err)
     return NextResponse.json<ApiResponse<never>>(

@@ -1,13 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Camera } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import Button from '@/components/ui/Button';
 
 type Stage = 'idle' | 'loading' | 'sent' | 'error';
 
-export default function LoginPage() {
+function LoginForm() {
+  const searchParams = useSearchParams();
+  const next  = searchParams.get('next')  ?? '/dashboard'
+  const claim = searchParams.get('claim') ?? ''
+
   const [email, setEmail] = useState('');
   const [stage, setStage] = useState<Stage>('idle');
   const [error, setError] = useState('');
@@ -17,12 +22,17 @@ export default function LoginPage() {
     setStage('loading');
     setError('');
 
+    // Build the post-auth redirect:
+    // If there's a claim eventId, go to /claim/[id] (works cross-device).
+    // Otherwise fall back to ?next= or /dashboard.
+    const redirectTo = claim
+      ? `${location.origin}/auth/callback?next=/claim/${claim}`
+      : `${location.origin}/auth/callback?next=${encodeURIComponent(next)}`
+
     const supabase = createClient();
     const { error: err } = await supabase.auth.signInWithOtp({
       email,
-      options: {
-        emailRedirectTo: `${location.origin}/auth/callback`,
-      },
+      options: { emailRedirectTo: redirectTo },
     });
 
     if (err) {
@@ -46,7 +56,6 @@ export default function LoginPage() {
         </div>
 
         {stage === 'sent' ? (
-          /* ── Success state ── */
           <div>
             <p className="font-serif text-3xl font-light text-[#1a1a1a] mb-3">
               Check your email ✦
@@ -55,6 +64,11 @@ export default function LoginPage() {
               We sent a magic link to <strong>{email}</strong>.
               Click it to sign in — no password needed.
             </p>
+            {claim && (
+              <p className="mt-4 text-xs text-amber-700 font-sans bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                Your event will be saved to your account automatically when you click the link.
+              </p>
+            )}
             <button
               onClick={() => setStage('idle')}
               className="mt-8 text-xs text-gray-400 font-sans hover:text-gray-600 transition-colors"
@@ -63,13 +77,14 @@ export default function LoginPage() {
             </button>
           </div>
         ) : (
-          /* ── Form state ── */
           <>
             <h1 className="font-serif text-3xl font-light text-[#1a1a1a] mb-2">
-              Sign in
+              {claim ? 'Save your event' : 'Sign in'}
             </h1>
             <p className="text-sm text-gray-400 font-sans mb-8">
-              Enter your email — we&apos;ll send you a magic link.
+              {claim
+                ? "Enter your email — we'll send you a magic link. Your event will be saved automatically."
+                : "Enter your email — we'll send you a magic link."}
             </p>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -94,5 +109,15 @@ export default function LoginPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7]" />
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

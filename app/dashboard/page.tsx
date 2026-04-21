@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { Calendar, Images, MapPin } from 'lucide-react'
 
@@ -9,9 +10,30 @@ const getAdminClient = () =>
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-export default async function DashboardPage() {
+interface Props {
+  searchParams: Promise<{ claimed?: string }>
+}
+
+export default async function DashboardPage({ searchParams }: Props) {
+  const { claimed } = await searchParams
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  // Check for pending claim cookie (same-browser fallback)
+  const cookieStore = await cookies()
+  const pendingClaimId = cookieStore.get('gatherly_pending_claim')?.value ?? null
+
+  // Verify the pending claim is actually still unclaimed (not already done)
+  let showPendingBanner = false
+  if (pendingClaimId) {
+    const { data: pendingEvent } = await getAdminClient()
+      .from('events')
+      .select('id, host_id')
+      .eq('id', pendingClaimId)
+      .is('host_id', null)
+      .single()
+    showPendingBanner = !!pendingEvent
+  }
 
   // Fetch this host's events, newest first
   const { data: events } = await getAdminClient()
@@ -21,7 +43,35 @@ export default async function DashboardPage() {
     .order('created_at', { ascending: false })
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] p-8 md:p-16">
+    <div className="min-h-screen bg-[#FDFBF7]">
+
+      {/* ── Claimed success banner ─────────────────────────────────────── */}
+      {claimed === '1' && (
+        <div className="w-full bg-[#5A5A40] px-6 py-3 text-center">
+          <p className="font-sans text-sm text-white">
+            ✦ Event saved to your account successfully!
+          </p>
+        </div>
+      )}
+
+      {/* ── Pending claim banner (same-browser cookie fallback) ────────── */}
+      {showPendingBanner && pendingClaimId && (
+        <div className="w-full bg-amber-50 border-b border-amber-200 px-6 py-3">
+          <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+            <p className="font-sans text-sm text-amber-800">
+              ⚠️ You have an unsaved event from a previous session.
+            </p>
+            <Link
+              href={`/claim/${pendingClaimId}`}
+              className="shrink-0 pill-button bg-amber-600 text-white font-sans font-medium text-xs hover:bg-amber-700"
+            >
+              Claim it now →
+            </Link>
+          </div>
+        </div>
+      )}
+
+      <div className="p-8 md:p-16">
       <div className="max-w-4xl mx-auto">
 
         {/* Header */}
@@ -130,6 +180,7 @@ export default async function DashboardPage() {
           </div>
         )}
 
+      </div>
       </div>
     </div>
   )

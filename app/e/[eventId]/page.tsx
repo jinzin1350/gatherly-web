@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import type { EventData } from '@/lib/types';
 import EventPageView from '@/components/EventPage/EventPageView';
+import SaveBanner from './SaveBanner';
 
 // Service role — bypasses RLS, consistent with other server routes
 const getAdminClient = () =>
@@ -54,5 +55,10 @@ export default async function EventPage({ params, searchParams }: Props) {
 
   const event = rowToEventData(data)
 
-  return <EventPageView data={event} isFresh={isFresh} />
+  return (
+    <>
+      <SaveBanner eventId={event.eventId} hostId={event.hostId} />
+      <EventPageView data={event} isFresh={isFresh} />
+    </>
+  )
 }
