@@ -4,5 +4,16 @@
       "path": "/api/cron/post-event",
       "schedule": "*/5 * * * *"
     }
-  ]
+  ],
+  "functions": {
+    "app/api/events/create/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/events/analyze/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/events/[eventId]/photos/upload/route.ts": {
+      "maxDuration": 30
+    }
+  }
 }
