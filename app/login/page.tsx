@@ -22,12 +22,10 @@ function LoginForm() {
     setStage('loading');
     setError('');
 
-    // Build the post-auth redirect:
-    // If there's a claim eventId, go to /claim/[id] (works cross-device).
-    // Otherwise fall back to ?next= or /dashboard.
-    const redirectTo = claim
-      ? `${location.origin}/auth/callback?next=/claim/${claim}`
-      : `${location.origin}/auth/callback?next=${encodeURIComponent(next)}`
+    // Always redirect back to /auth/callback.
+    // The callback route reads the gatherly_pending_claim cookie and
+    // auto-claims the event — no need to encode claim in the URL.
+    const redirectTo = `${location.origin}/auth/callback`
 
     const supabase = createClient();
     const { error: err } = await supabase.auth.signInWithOtp({
