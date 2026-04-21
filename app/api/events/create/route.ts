@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import { ulid } from 'ulid'
 import { nanoid } from 'nanoid'
 import { getAIConfig } from '@/lib/ai/config'
@@ -13,6 +15,31 @@ const getAdminClient = () =>
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
+
+/** Returns the authenticated user's ID from the session cookie, or null. */
+async function getSessionUserId(): Promise<string | null> {
+  try {
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll() },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          },
+        },
+      }
+    )
+    const { data: { user } } = await supabase.auth.getUser()
+    return user?.id ?? null
+  } catch {
+    return null
+  }
+}
 
 // Gemini sometimes returns values outside the DB check constraint.
 // Normalize to the nearest valid ui_style before inserting.
@@ -41,12 +68,16 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Resolve authenticated user (null = anonymous / not logged in)
+    const hostId = await getSessionUserId()
+
     // Mock mode — skip AI + storage, return fixture
     if (process.env.AI_MOCK === 'true') {
       const event: EventData = {
         ...FIXTURE_EVENT,
         eventId: ulid(),
         shortToken: nanoid(10),
+        hostId: hostId ?? 'anon',
         createdAt: new Date().toISOString(),
       }
       return NextResponse.json<ApiResponse<EventData>>({ ok: true, data: event })
@@ -85,7 +116,7 @@ export async function POST(req: NextRequest) {
       ...details,
       eventId,
       shortToken,
-      hostId: 'anon',
+      hostId: hostId ?? 'anon',
       plan: 'free',
       createdAt: new Date().toISOString(),
       images: {
@@ -102,7 +133,7 @@ export async function POST(req: NextRequest) {
       .insert({
         id:              event.eventId,
         short_token:     event.shortToken,
-        host_id:         null,           // anon until auth is wired (Day 3+)
+        host_id:         hostId,         // null for anon, UUID for authenticated users
         prompt,
         title:           event.title,
         description:     event.description,

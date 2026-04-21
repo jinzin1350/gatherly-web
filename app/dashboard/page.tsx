@@ -34,12 +34,20 @@ export default async function DashboardPage() {
               {user!.email}
             </p>
           </div>
-          <Link
-            href="/"
-            className="pill-button bg-[#5A5A40] text-white font-sans font-medium text-sm shadow-md hover:bg-[#4a4a34] inline-flex items-center gap-2"
-          >
-            + New event
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="pill-button bg-[#5A5A40] text-white font-sans font-medium text-sm shadow-md hover:bg-[#4a4a34] inline-flex items-center gap-2"
+            >
+              + New event
+            </Link>
+            <Link
+              href="/logout"
+              className="pill-button bg-white border border-gray-200 text-gray-500 font-sans font-medium text-sm hover:border-gray-300 hover:text-gray-700 inline-flex items-center gap-2"
+            >
+              Sign out
+            </Link>
+          </div>
         </div>
 
         {/* Event list */}
