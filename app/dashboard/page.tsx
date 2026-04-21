@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Calendar, MapPin } from 'lucide-react'
+import { Calendar, Images, MapPin } from 'lucide-react'
 
 const getAdminClient = () =>
   createClient(
@@ -68,10 +68,9 @@ export default async function DashboardPage() {
         ) : (
           <div className="flex flex-col gap-4">
             {events.map(event => (
-              <Link
+              <div
                 key={event.id}
-                href={`/e/${event.id}`}
-                className="group glass-panel rounded-2xl p-6 flex items-center gap-6 hover:shadow-lg transition-all duration-200"
+                className="glass-panel rounded-2xl p-6 flex items-center gap-6"
               >
                 {/* Hero thumbnail */}
                 <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-100">
@@ -79,7 +78,7 @@ export default async function DashboardPage() {
                     <img
                       src={event.images.hero}
                       alt={event.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="w-full h-full bg-gray-200" />
@@ -98,7 +97,7 @@ export default async function DashboardPage() {
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-gray-400 font-sans">
+                  <div className="flex items-center gap-4 text-sm text-gray-400 font-sans mb-4">
                     <span className="flex items-center gap-1.5">
                       <Calendar size={13} />
                       {event.date}
@@ -108,13 +107,25 @@ export default async function DashboardPage() {
                       {event.location}
                     </span>
                   </div>
-                </div>
 
-                {/* Arrow */}
-                <span className="text-gray-300 group-hover:text-[#5A5A40] transition-colors font-sans text-lg shrink-0">
-                  →
-                </span>
-              </Link>
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/e/${event.id}`}
+                      className="pill-button bg-[#5A5A40] text-white font-sans font-medium text-xs shadow-sm hover:bg-[#4a4a34]"
+                    >
+                      View event →
+                    </Link>
+                    <Link
+                      href={`/e/${event.id}/gallery`}
+                      className="pill-button bg-white border border-gray-200 text-gray-500 font-sans font-medium text-xs hover:border-[#5A5A40] hover:text-[#5A5A40] transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <Images size={13} />
+                      Gallery
+                    </Link>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         )}
