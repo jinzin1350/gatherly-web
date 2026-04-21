@@ -4,12 +4,13 @@ import {
 } from '@react-email/components'
 
 interface Props {
-  guestName:     string
-  eventTitle:    string
-  eventDate:     string
-  eventTime:     string
-  eventLocation: string
-  eventUrl:      string
+  guestName:       string
+  eventTitle:      string
+  eventDate:       string
+  eventTime:       string
+  eventLocation:   string
+  eventUrl:        string
+  uploadPhotoUrl?: string  // personalised ?t= link — omitted if no token
 }
 
 export function RsvpConfirmation({
@@ -19,6 +20,7 @@ export function RsvpConfirmation({
   eventTime,
   eventLocation,
   eventUrl,
+  uploadPhotoUrl,
 }: Props) {
   return (
     <Html lang="en">
@@ -67,6 +69,36 @@ export function RsvpConfirmation({
           >
             View event page →
           </Link>
+
+          {uploadPhotoUrl && (
+            <>
+              <Hr style={{ borderColor: '#e8e4dc', marginBottom: 24 }} />
+
+              <Text style={{ margin: '0 0 8px', color: '#888', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.15em' }}>
+                Share your photos
+              </Text>
+              <Text style={{ fontSize: 14, color: '#555', lineHeight: 1.6, marginBottom: 16 }}>
+                Use your personal link below to upload photos from the event — it&apos;s just for you.
+              </Text>
+              <Link
+                href={uploadPhotoUrl}
+                style={{
+                  display: 'inline-block',
+                  backgroundColor: '#F5F0E8',
+                  color: '#5A5A40',
+                  borderRadius: 9999,
+                  padding: '10px 24px',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  marginBottom: 32,
+                  border: '1px solid #e8e0d0',
+                }}
+              >
+                📸 Upload your photos →
+              </Link>
+            </>
+          )}
 
           <Hr style={{ borderColor: '#e8e4dc', marginBottom: 24 }} />
 

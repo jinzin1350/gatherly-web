@@ -4,8 +4,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sparkles, ArrowRight } from 'lucide-react';
 
-export default function HeroPrompt() {
-  const [prompt, setPrompt] = useState('');
+interface Props {
+  initialValue?: string;
+}
+
+export default function HeroPrompt({ initialValue = '' }: Props) {
+  const [prompt, setPrompt] = useState(initialValue);
   const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {

@@ -77,7 +77,18 @@ export async function POST(
 
     // Send confirmation email (non-blocking — don't fail RSVP if email fails)
     if (attending) {
-      const eventUrl = `${BASE_URL}/e/${eventId}`
+      // Fetch the upload_token that was just upserted
+      const { data: guestRow } = await db
+        .from('guests')
+        .select('upload_token')
+        .eq('id', guest.id)
+        .single()
+
+      const eventUrl       = `${BASE_URL}/e/${eventId}`
+      const uploadPhotoUrl = guestRow?.upload_token
+        ? `${BASE_URL}/e/${eventId}/photos?t=${guestRow.upload_token}`
+        : undefined
+
       sendEmail({
         to:       email,
         subject:  `You're going to ${event.title} 🎉`,
@@ -88,6 +99,7 @@ export async function POST(
           eventTime:     event.time,
           eventLocation: event.location,
           eventUrl,
+          uploadPhotoUrl,
         }),
       }).catch(err => console.error('[rsvp] email failed:', err))
     }
