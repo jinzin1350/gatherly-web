@@ -53,7 +53,7 @@ export default async function HomePage({ searchParams }: Props) {
           {/* Example link */}
           <p className="mt-4 font-sans text-xs text-gray-400">
             <a
-              href="/e/EXAMPLE_ID"
+              href="/e/01KPRKDFV2RG7JWTDCAN5EE6GT"
               className="hover:text-[#5A5A40] transition-colors underline underline-offset-2"
             >
               See a live example →
